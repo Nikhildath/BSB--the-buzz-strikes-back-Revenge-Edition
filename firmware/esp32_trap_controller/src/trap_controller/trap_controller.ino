@@ -136,11 +136,17 @@ void loop() {
   // Read sensors continuously
   readIRSensor();
 
-  // HC-SR04 at reduced rate
+  // HC-SR04 at 1Hz for lift detection
   static uint32_t lastHCSR04Read = 0;
-  if (now - lastHCSR04Read >= 5000) {
+  if (now - lastHCSR04Read >= 1000) {
     readHCSR04();
     lastHCSR04Read = now;
+    Serial.print("Dist: ");
+    Serial.print(state.distanceCM);
+    Serial.print("cm | baseline: ");
+    Serial.print(state.baselineHeightCM);
+    Serial.print("cm | lifted: ");
+    Serial.println(state.isLifted ? "YES" : "no");
   }
 
   // Lift detection check
