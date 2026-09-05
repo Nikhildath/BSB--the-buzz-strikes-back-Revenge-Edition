@@ -38,7 +38,7 @@
 // Mosquito sound frequencies (female wingbeat = 400-600Hz)
 #define MOSQUITO_FREQ_BASE  450
 #define MOSQUITO_FREQ_VAR   50
-#define MOSQUITO_VOLUME     8000  // 16-bit amplitude
+#define MOSQUITO_VOLUME     8000.0f
 
 // LED PWM settings
 #define LED_PWM_FREQ              5000
@@ -76,9 +76,10 @@ struct TrapState {
   uint32_t lastLiftCheck = 0;
 
   // Speaker audio
-  uint8_t speakerVolume = MOSQUITO_VOLUME;
+  uint8_t speakerVolume = 180;
   uint32_t lastFreqUpdate = 0;
   float currentFreq = MOSQUITO_FREQ_BASE;
+  float speakerPhase = 0.0f;
 } state;
 
 // Gateway MAC address
@@ -123,6 +124,15 @@ void setup() {
   initActuators();
   initESPNow();
 
+  // =========================
+  // TEST: Speaker without ESP-NOW
+  // Remove this after confirming sound works
+  // =========================
+  state.buzzEnabled = true;
+  state.mode = MODE_AUTO;
+  state.speakerVolume = 200;
+  Serial.println("TEST: Speaker ON");
+
   Serial.println("=== Trap Controller Ready ===\n");
 }
 
@@ -151,11 +161,6 @@ void loop() {
     controlLED();
     if (state.mode == MODE_AUTO) {
       controlSpeaker();
-    } else {
-      // Silent mode — send silence
-      int16_t silence[I2S_BUFFER_SIZE] = {0};
-      size_t bytes_written;
-      i2s_write(I2S_PORT, silence, sizeof(silence), &bytes_written, portMAX_DELAY);
     }
     controlZapper();
   }
@@ -230,7 +235,10 @@ void initActuators() {
   ledcAttach(PIN_LED_BLUE, LED_PWM_FREQ, LED_PWM_RESOLUTION);
   ledcWrite(PIN_LED_BLUE, 0);
 
-  // I2S speaker — MAX98357A
+  // =========================
+  // MAX98357A I2S SPEAKER
+  // =========================
+
   i2s_config_t i2s_config = {};
   i2s_config.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX);
   i2s_config.sample_rate = I2S_SAMPLE_RATE;
@@ -238,10 +246,11 @@ void initActuators() {
   i2s_config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT;
   i2s_config.communication_format = I2S_COMM_FORMAT_STAND_I2S;
   i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;
-  i2s_config.dma_buf_count = 4;
-  i2s_config.dma_buf_len = I2S_BUFFER_SIZE;
+  i2s_config.dma_buf_count = 8;
+  i2s_config.dma_buf_len = 256;
   i2s_config.use_apll = false;
   i2s_config.tx_desc_auto_clear = true;
+  i2s_config.fixed_mclk = 0;
 
   i2s_pin_config_t pin_config = {};
   pin_config.bck_io_num = PIN_I2S_BCLK;
@@ -249,19 +258,38 @@ void initActuators() {
   pin_config.data_out_num = PIN_I2S_DIN;
   pin_config.data_in_num = I2S_PIN_NO_CHANGE;
 
-  i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
-  i2s_set_pin(I2S_PORT, &pin_config);
+  esp_err_t result;
+
+  result = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+  if (result != ESP_OK) {
+    Serial.print("I2S driver install FAILED: ");
+    Serial.println(result);
+  } else {
+    Serial.println("I2S driver installed");
+  }
+
+  result = i2s_set_pin(I2S_PORT, &pin_config);
+  if (result != ESP_OK) {
+    Serial.print("I2S pin setup FAILED: ");
+    Serial.println(result);
+  } else {
+    Serial.println("I2S pins configured");
+  }
+
   i2s_zero_dma_buffer(I2S_PORT);
 
-  // Zapper
+  // =========================
+  // ZAPPER
+  // =========================
+
   pinMode(PIN_ZAPPER_ENABLE, OUTPUT);
   digitalWrite(PIN_ZAPPER_ENABLE, LOW);
 
-  // Status LED
+  // Status LEDs
   pinMode(PIN_STATUS_LED, OUTPUT);
   pinMode(PIN_BUILDIN_LED, OUTPUT);
 
-  Serial.println("Actuators initialized (speaker mode)");
+  Serial.println("Actuators initialized");
 }
 
 void initESPNow() {
@@ -341,34 +369,46 @@ void controlLED() {
 }
 
 void controlSpeaker() {
-  if (state.buzzEnabled && state.mode != MODE_SILENT) {
-    uint32_t now = millis();
+  static int16_t samples[I2S_BUFFER_SIZE];
 
-    // Update frequency every 100ms for realistic mosquito sound
-    if (now - state.lastFreqUpdate >= 100) {
-      state.currentFreq = MOSQUITO_FREQ_BASE +
-        (sin(now * 0.003) * MOSQUITO_FREQ_VAR);
-
-      // Generate sine wave samples and send via I2S
-      int16_t samples[I2S_BUFFER_SIZE];
-      float amplitude = (float)state.speakerVolume / 255.0 * MOSQUITO_VOLUME;
-      for (int i = 0; i < I2S_BUFFER_SIZE; i += 2) {
-        float t = (float)i / (float)I2S_SAMPLE_RATE;
-        int16_t sample = (int16_t)(amplitude * sin(2.0 * PI * state.currentFreq * t));
-        samples[i] = sample;      // left
-        samples[i + 1] = sample;  // right
-      }
-
-      size_t bytes_written;
-      i2s_write(I2S_PORT, samples, sizeof(samples), &bytes_written, portMAX_DELAY);
-      state.lastFreqUpdate = now;
-    }
-  } else {
-    // Silence
-    int16_t silence[I2S_BUFFER_SIZE] = {0};
-    size_t bytes_written;
-    i2s_write(I2S_PORT, silence, sizeof(silence), &bytes_written, portMAX_DELAY);
+  // Speaker OFF
+  if (!state.buzzEnabled || state.mode == MODE_SILENT) {
+    memset(samples, 0, sizeof(samples));
+    size_t bytes_written = 0;
+    i2s_write(I2S_PORT, samples, sizeof(samples), &bytes_written, 0);
+    return;
   }
+
+  uint32_t now = millis();
+
+  // Slowly vary mosquito frequency
+  if (now - state.lastFreqUpdate >= 100) {
+    state.currentFreq = MOSQUITO_FREQ_BASE +
+      (sin((float)now * 0.003f) * MOSQUITO_FREQ_VAR);
+    state.lastFreqUpdate = now;
+  }
+
+  // Convert 0-255 volume to amplitude
+  float amplitude = ((float)state.speakerVolume / 255.0f) * MOSQUITO_VOLUME;
+
+  // Generate continuous stereo sine wave
+  for (int i = 0; i < I2S_BUFFER_SIZE; i += 2) {
+    float sample = sinf(state.speakerPhase) * amplitude;
+    int16_t audioSample = (int16_t)constrain(sample, -32767.0f, 32767.0f);
+
+    samples[i] = audioSample;     // left
+    samples[i + 1] = audioSample; // right
+
+    // Advance phase
+    state.speakerPhase += 2.0f * PI * state.currentFreq / (float)I2S_SAMPLE_RATE;
+    if (state.speakerPhase >= 2.0f * PI) {
+      state.speakerPhase -= 2.0f * PI;
+    }
+  }
+
+  // Continuously feed I2S
+  size_t bytes_written = 0;
+  i2s_write(I2S_PORT, samples, sizeof(samples), &bytes_written, 0);
 }
 
 void controlZapper() {
