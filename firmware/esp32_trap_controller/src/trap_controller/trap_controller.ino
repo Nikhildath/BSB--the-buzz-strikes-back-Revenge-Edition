@@ -126,12 +126,6 @@ void setup() {
   initActuators();
   initESPNow();
 
-  // =========================
-  // TEST: Speaker hardware verification
-  // Remove this after confirming sound works
-  // =========================
-  testSpeaker();
-
   Serial.println("=== Trap Controller Ready ===\n");
 }
 
