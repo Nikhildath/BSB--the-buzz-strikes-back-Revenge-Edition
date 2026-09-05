@@ -22,7 +22,7 @@ Fully automated mosquito trap using two ESP32 boards, ESP-NOW communication, sen
 - **Blue LED attractant** with adjustable PWM brightness
 - **IR sensor** for mosquito detection with 2s debounce
 - **HC-SR04** ultrasonic for height monitoring and **lift detection**
-- **Speaker + PAM8403 amplifier** for mosquito buzzing sound (400-500Hz varying)
+- **Speaker + MAX98357A amplifier** for mosquito buzzing sound (400-500Hz varying)
 - **Zapper control** with safety MOSFET driver
 - **OLED touchscreen** with 5 animated face emotions
 - **Touch sensors** for emotion cycling and buzz toggle

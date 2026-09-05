@@ -7,14 +7,14 @@
 | # | Component | Qty | Notes | Est. Cost |
 |---|-----------|-----|-------|-----------|
 | 1 | ESP32 DevKit V1 (WROOM-32) | 2 | 30-pin or 38-pin version | $8×2 |
-| 2 | OLED Display 0.96" I2C 128x64 | 1 | SSD1306, I2C address 0x3C | $3 |
+| 2 | OLED Display 0.96" I2C 128x64 | 1 | SSD1306, I2C address 0x3C, U8g2 library, emotic eyes display | $3 |
 | 3 | IR Break-Beam Sensor (FC-03) | 1 | Digital output, 3.3V compatible | $2 |
 | 4 | HC-SR04 Ultrasonic Sensor | 1 | 2cm-400cm range | $2 |
 | 5 | Blue LED (5mm, high brightness) | 4 | 470nm wavelength, 15° angle | $1 |
 | 6 | IRLZ44N Logic-Level MOSFET | 1 | For blue LED array PWM | $1 |
 | 7 | IRF540N N-Channel MOSFET | 1 | For zapper grid switching | $1 |
-| 8 | PAM8403 Mini Amplifier Module | 1 | 5V audio amplifier, 3W | $2 |
-| 9 | Speaker (8Ω 3W) | 1 | For mosquito buzzing audio | $2 |
+| 8 | MAX98357A I2S Amplifier Module | 1 | 5V I2S audio amplifier, 3W | $2 |
+| 9 | Speaker (4Ω/8Ω 3W) | 1 | For mosquito buzzing audio | $2 |
 | 10 | TTP223 Capacitive Touch Sensor | 2 | Touch buttons (emotion + speaker) | $1×2 |
 | 11 | 12V DC Power Adapter (2A) | 1 | Main power supply | $5 |
 | 12 | LM2596 Buck Converter Module | 1 | 12V → 5V step-down | $2 |
@@ -71,7 +71,9 @@
 | 26 | IR Sensor | Input | FC-03 digital out |
 | 27 | HC-SR04 Trig | Output | Ultrasonic trigger |
 | 14 | HC-SR04 Echo | Input | Ultrasonic echo (via voltage divider) |
-| 12 | Speaker PWM | Output | To PAM8403 amplifier input |
+| 5 | I2S BCLK | Output | To MAX98357A BCLK |
+| 18 | I2S LRC | Output | To MAX98357A LRC |
+| 19 | I2S DIN | Output | To MAX98357A DIN |
 | 32 | Zapper Enable | Output | IRF540N MOSFET gate (via 1kΩ) |
 | 33 | Status LED | Output | Green LED (heartbeat indicator) |
 | 2 | Built-in LED | Output | Debug indicator |
@@ -82,8 +84,8 @@
 
 | GPIO | Function | Direction | Component |
 |------|----------|-----------|-----------|
-| 21 | I2C SDA | Bidir | OLED SSD1306 |
-| 22 | I2C SCL | Bidir | OLED SSD1306 |
+| 21 | I2C SDA | Bidir | OLED SSD1306 (emotic eyes) |
+| 22 | I2C SCL | Bidir | OLED SSD1306 (emotic eyes) |
 | 32 | Touch #1 | Input | TTP223 (Emotion cycle) |
 | 33 | Touch #2 | Input | TTP223 (Speaker toggle) |
 | 2 | Built-in LED | Output | Debug indicator |
@@ -123,24 +125,28 @@ Output: 5V × 0.6 = 3.0V (safe for 3.3V GPIO)
                                                                                           Gate ──[10kΩ]──► GND
 ```
 
-### Speaker + PAM8403 Amplifier
+### Speaker + MAX98357A Amplifier
 
 ```
-ESP32               PAM8403 Amplifier        Speaker
-─────               ─────────────────        ───────
-GPIO 12 ──────────► AUDIO IN+               ┌──────┐
-                                       OUT+ ─┤      ├──┐
-GND ──────────────► AUDIO IN-          OUT- ─┤  L   │  ├──► Speaker +
-                                             │      │  │
-5V ───────────────► VCC                GND ──┤      │  ├──► Speaker -
-                                             └──────┘
-GND ──────────────► GND
+ESP32               MAX98357A Amplifier        Speaker
+─────               ───────────────────        ───────
+GPIO 5  ──────────► BCLK (Bit Clock)     ┌──────┐
+GPIO 18 ──────────► LRC (Word Select)  OUT+ ┤      ├──┐
+GPIO 19 ──────────► DIN (Data In)      OUT- ┤  L   │  ├──► Speaker +
+                                          │      │  │
+GND ──────────────► GND              GND ──┤      │  ├──► Speaker -
+                                          └──────┘
+5V ───────────────► VIN
 ```
 
-**3 wires from ESP32 to amplifier:**
-1. GPIO 12 → AUDIO IN+
-2. GND → AUDIO IN- AND GND
-3. 5V → VCC
+**5 wires from ESP32 to MAX98357A:**
+1. GPIO 5 → BCLK (Bit Clock)
+2. GPIO 18 → LRC (Left/Right Clock)
+3. GPIO 19 → DIN (Serial Data In)
+4. 5V → VIN
+5. GND → GND
+
+**MAX98357A gain:** GAIN → GND = 12dB (as wired)
 
 ### Zapper MOSFET Driver
 
@@ -167,13 +173,15 @@ TTP223 SIG ──► Not connected
 TTP223 BLG ──► Not connected
 ```
 
-### I2C OLED Display
+### OLED Display — Emotic Eyes
 
 ```
-SSD1306 VCC ──► 3.3V
-SSD1306 GND ──► GND
-SSD1306 SDA ──► ESP32 GPIO 21
-SSD1306 SCL ──► ESP32 GPIO 22
+SSD1306 OLED           ESP32
+─────────────          ─────
+VCC ──────────────► 3.3V
+GND ──────────────► GND
+SDA ──────────────► ESP32 GPIO 21
+SCL ──────────────► ESP32 GPIO 22
 ```
 
 Most OLED modules have 4.7kΩ pull-ups on SDA/SCL. If not, add:
@@ -181,6 +189,8 @@ Most OLED modules have 4.7kΩ pull-ups on SDA/SCL. If not, add:
 GPIO 21 ──[4.7kΩ]──► 3.3V
 GPIO 22 ──[4.7kΩ]──► 3.3V
 ```
+
+Uses U8g2 library with ESP32-Eyes emotic eyes animation system (18 emotions including Happy, Angry, Sad, Sleepy, Scared, etc.)
 
 ### Status LED
 
@@ -197,7 +207,7 @@ GPIO 33 ──[220Ω]──► LED (green) + ──► LED - ──► GND
                                                           │
                                                      5V ──┴──► ESP32 #1 VIN
                                                      5V ──┴──► ESP32 #2 VIN
-                                                     5V ──┴──► PAM8403 VCC
+                                                     5V ──┴──► MAX98357A VIN
                                                      5V ──┴──► HC-SR04 VCC
 
 5V ──► AMS1117-3.3V ──► 3.3V Rail

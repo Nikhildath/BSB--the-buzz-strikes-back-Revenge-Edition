@@ -60,12 +60,12 @@ firmware/esp32_ui_gateway/src/mosquito_protocol.h
                                                   │
                                             ┌─────┴─────┐
                                             │           │
-                                       ESP32#1 VIN  ESP32#2 VIN
-                                       (5V pin)    (5V pin)
-                                            │
-                                       PAM8403 VCC
-                                            │
-                                       HC-SR04 VCC
+                                        ESP32#1 VIN  ESP32#2 VIN
+                                        (5V pin)    (5V pin)
+                                             │
+                                        MAX98357A VIN
+                                             │
+                                        HC-SR04 VCC
 
 5V ──► AMS1117-3.3V ──► 3.3V rail
                               │
@@ -74,8 +74,6 @@ firmware/esp32_ui_gateway/src/mosquito_protocol.h
               IR Sensor   OLED VCC   Touch Sensors
               VCC (3.3V)  VCC(3.3V)  VCC (3.3V)
 ```
-
-### Connect Power
 1. 12V+ → Switch → Fuse → LM2596 IN+
 2. 12V- → LM2596 IN-
 3. Set LM2596 output to 5V (adjust potentiometer)
@@ -96,7 +94,9 @@ firmware/esp32_ui_gateway/src/mosquito_protocol.h
 | D26 | 26 | IR Sensor OUT | Green |
 | D27 | 27 | HC-SR04 TRIG | Blue |
 | D14 | 14 | Voltage divider → HC-SR04 ECHO | Blue |
-| D12 | 12 | PAM8403 AUDIO IN+ | Yellow |
+| D5  | 5  | MAX98357A BCLK | Yellow |
+| D18 | 18 | MAX98357A LRC | Yellow |
+| D19 | 19 | MAX98357A DIN | Yellow |
 | D32 | 32 | MOSFET Gate → Zapper | Red |
 | D33 | 33 | Status LED | White |
 | D2 | 2 | Built-in LED | — |
@@ -151,28 +151,34 @@ The voltage divider reduces 5V → 3.0V (safe for 3.3V GPIO).
 
 **Parts:** 1x 10kΩ, 1x 15kΩ
 
-### D. Speaker + Amplifier (GPIO 12)
+### D. Speaker + MAX98357A Amplifier (GPIO 5, 18, 19)
 
 ```
-ESP32               PAM8403 Amplifier        Speaker
-─────               ─────────────────        ───────
-GPIO 12 ──────────► AUDIO IN+               ┌──────┐
-                                       OUT+ ─┤      ├──┐
-GND ──────────────► AUDIO IN-          OUT- ─┤  L   │  ├──► Speaker +
-                                             │      │  │
-5V ───────────────► VCC                GND ──┤      │  ├──► Speaker -
-                                             └──────┘
+ESP32               MAX98357A Amplifier        Speaker
+─────               ───────────────────        ───────
+GPIO 5  ──────────► BCLK (Bit Clock)     ┌──────┐
+GPIO 18 ──────────► LRC (Word Select)  OUT+ ┤      ├──┐
+GPIO 19 ──────────► DIN (Data In)      OUT- ┤  L   │  ├──► Speaker +
+                                          │      │  │
+GND ──────────────► GND              GND ──┤      │  ├──► Speaker -
+                                          └──────┘
+5V ───────────────► VIN
 GND ──────────────► GND
 ```
 
-**3 wires from ESP32:**
-1. GPIO 12 → PAM8403 AUDIO IN+
-2. GND → PAM8403 AUDIO IN- AND PAM8403 GND
-3. 5V → PAM8403 VCC
+**MAX98357A I2S Amplifier — 5 wires from ESP32:**
+1. GPIO 5 → BCLK (Bit Clock)
+2. GPIO 18 → LRC (Left/Right Clock, word select)
+3. GPIO 19 → DIN (Serial Data In)
+4. 5V → VIN
+5. GND → GND (common ground with ESP32)
 
-Then connect speaker to amplifier output (OUT+ and OUT-).
+**MAX98357A additional pins:**
+- GAIN → GND = 12dB (as wired)
+  - Floating = 15dB
+  - VIN = 3dB
 
-**Parts:** 1x PAM8403, 1x Speaker 8Ω 3W
+**Parts:** 1x MAX98357A, 1x Speaker 4Ω/8Ω 3W
 
 ### E. Zapper MOSFET (GPIO 32)
 
@@ -209,11 +215,11 @@ GPIO 33 ──[220Ω]──► LED (green) + ──► LED - ──► GND
 | VIN | — | 5V from buck | Red |
 | GND | — | Common ground | Black |
 
-### A. OLED Display (I2C)
+### A. OLED Display — Emotic Eyes (I2C)
 
 ```
-OLED SSD1306        ESP32
-─────────────       ─────
+SSD1306 OLED           ESP32
+─────────────          ─────
 VCC  ─────────────► 3.3V
 GND  ─────────────► GND
 SDA  ─────────────► D21
@@ -221,6 +227,8 @@ SCL  ─────────────► D22
 ```
 
 **I2C Address:** 0x3C (default for SSD1306)
+**Library:** U8g2 (esp32-eyes emotic eyes animation system)
+**Display:** 128x64 SSD1306 OLED — shows animated emoticon eyes + status info
 
 ### B. Touch Sensor 1 — Emotion (GPIO 32)
 
@@ -287,15 +295,17 @@ GPIO 25 ──[1kΩ]── MOSFET Gate ── Blue LEDs
 GPIO 26 ────────── IR Sensor OUT
 GPIO 27 ────────── HC-SR04 TRIG
 GPIO 14 ──[10kΩ/15kΩ divider]── HC-SR04 ECHO
-GPIO 12 ────────── PAM8403 AUDIO IN+
+GPIO 5  ────────── MAX98357A BCLK
+GPIO 18 ────────── MAX98357A LRC
+GPIO 19 ────────── MAX98357A DIN
 GPIO 32 ──[1kΩ]── MOSFET Gate ── Zapper
 GPIO 33 ──[220Ω]── Status LED
 ```
 
 ### ESP32 #2 (GATEWAY)
 ```
-GPIO 21 ────────── OLED SDA
-GPIO 22 ────────── OLED SCL
+GPIO 21 ────────── OLED SDA (emotic eyes)
+GPIO 22 ────────── OLED SCL (emotic eyes)
 GPIO 32 ────────── Touch 1 (Emotion)
 GPIO 33 ────────── Touch 2 (Speaker)
 ```
@@ -304,7 +314,7 @@ GPIO 33 ────────── Touch 2 (Speaker)
 ```
 12V ── Switch ── Fuse ── Buck ── 5V ── ESP32 VIN ×2
 5V  ── AMS1117 ── 3.3V ── OLED, IR, Touch
-5V  ── PAM8403 VCC
+5V  ── MAX98357A VIN
 5V  ── HC-SR04 VCC
 ```
 
@@ -319,7 +329,7 @@ GPIO 33 ────────── Touch 2 (Speaker)
 5. **VIN pin not used** → Use VIN for 5V power, not USB when running standalone.
 6. **No common ground** → ESP-NOW fails. Connect ALL GND wires together.
 7. **OLED not showing** → Check I2C address (0x3C), check SDA/SCL not swapped.
-8. **Speaker silent** → Check amplifier 5V power, check GPIO 12 wiring.
+8. **Speaker silent** → Check amplifier 5V power, check GPIO 5/18/19 wiring.
 9. **Lift always triggering** → Restart to recalibrate baseline height.
 
 ---

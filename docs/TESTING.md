@@ -62,7 +62,7 @@
 
 ## Test 5: Speaker/Audio System
 
-**Setup:** Speaker + PAM8403 amplifier on GPIO 12
+**Setup:** Speaker + MAX98357A amplifier on GPIO 5/18/19
 
 **Procedure:**
 1. Click Buzz ON → verify mosquito buzzing sound
@@ -191,8 +191,8 @@
 | HC-SR04 timeout | Divider wrong | Check 10kΩ/15kΩ divider on echo |
 | LED flickers | PWM too low | Already set to 5000Hz |
 | Web won't load | Wrong IP | Check serial for AP IP (192.168.4.1) |
-| Speaker silent | Amp not powered | Check 5V to PAM8403 VCC |
-| Speaker silent | Wrong GPIO | Check GPIO 12 wiring |
+| Speaker silent | Amp not powered | Check 5V to MAX98357A VIN |
+| Speaker silent | Wrong GPIO | Check GPIO 5/18/19 wiring |
 | Speaker distorted | Volume too high | Reduce volume below 200 |
 | Lift not detecting | Threshold too high | Check LIFT_THRESHOLD_CM (5.0) |
 | Lift always on | Baseline bad | Restart to recalibrate |

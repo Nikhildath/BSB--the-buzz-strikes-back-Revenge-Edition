@@ -29,8 +29,8 @@
 │  └───────────┘              │                │  └───────────┘              │
 │                             │                │                             │
 │  ┌───────────┐              │                │  ┌───────────┐              │
-│  │ Speaker   │◄── GPIO 12   │                │  │ Wi-Fi     │──► Web UI   │
-│  │ + PAM8403 │              │                │  │ (AP+STA)  │              │
+│  │ Speaker   │◄── GPIO 5/18/19 │                │  │ Wi-Fi     │──► Web UI   │
+│  │ + MAX98357A│              │                │  │ (AP+STA)  │              │
 │  └───────────┘              │                │  └───────────┘              │
 │                             │                │                             │
 │  ┌───────────┐              │                │                             │
@@ -170,12 +170,12 @@ Byte 15:     Checksum (XOR of bytes 0-14)
 
 ## Mosquito Sound Generation
 
-### Speaker + PAM8403 Amplifier
+### Speaker + MAX98357A Amplifier
 
-- ESP32 GPIO 12 outputs PWM signal
-- PAM8403 amplifier boosts signal to speaker
+- ESP32 GPIO 12 (BCLK), 13 (LRC), 15 (DIN) send I2S audio data
+- MAX98357A I2S amplifier converts digital audio to analog signal
 - Frequency varies between 400-500Hz for realistic mosquito wingbeat
-- Volume controlled via PWM duty cycle (0-255)
+- Volume controlled via I2S data amplitude (0-255)
 - Frequency updates every 100ms using sine wave modulation
 
 ### Why This Frequency?

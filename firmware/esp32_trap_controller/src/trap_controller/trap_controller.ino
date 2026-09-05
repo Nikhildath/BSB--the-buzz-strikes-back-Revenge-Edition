@@ -9,6 +9,7 @@
 #include <esp_now.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
+#include <driver/i2s.h>
 #include "mosquito_protocol.h"
 
 // ===== Pin Definitions =====
@@ -16,7 +17,9 @@
 #define PIN_IR_SENSOR     26
 #define PIN_HCSR04_TRIG   27
 #define PIN_HCSR04_ECHO   14
-#define PIN_SPEAKER       12
+#define PIN_I2S_BCLK      5
+#define PIN_I2S_LRC       18
+#define PIN_I2S_DIN       19
 #define PIN_ZAPPER_ENABLE 32
 #define PIN_STATUS_LED    33
 #define PIN_BUILDIN_LED   2
@@ -27,14 +30,15 @@
 #define IR_DEBOUNCE_MS            2000
 #define HC_SR04_TIMEOUT_US        30000
 
-// Speaker/Audio settings (mosquito wingbeat frequency)
-#define SPEAKER_PWM_FREQ          20000  // 20kHz PWM base
-#define SPEAKER_PWM_RESOLUTION    8      // 8-bit (0-255)
+// Speaker/I2S settings (MAX98357A)
+#define I2S_PORT            I2S_NUM_0
+#define I2S_SAMPLE_RATE     44100
+#define I2S_BUFFER_SIZE     256
 
 // Mosquito sound frequencies (female wingbeat = 400-600Hz)
-#define MOSQUITO_FREQ_BASE        450
-#define MOSQUITO_FREQ_VAR         50
-#define MOSQUITO_VOLUME           128
+#define MOSQUITO_FREQ_BASE  450
+#define MOSQUITO_FREQ_VAR   50
+#define MOSQUITO_VOLUME     8000  // 16-bit amplitude
 
 // LED PWM settings
 #define LED_PWM_FREQ              5000
@@ -148,7 +152,10 @@ void loop() {
     if (state.mode == MODE_AUTO) {
       controlSpeaker();
     } else {
-      ledcWrite(PIN_SPEAKER, 0);
+      // Silent mode — send silence
+      int16_t silence[I2S_BUFFER_SIZE] = {0};
+      size_t bytes_written;
+      i2s_write(I2S_PORT, silence, sizeof(silence), &bytes_written, portMAX_DELAY);
     }
     controlZapper();
   }
@@ -223,9 +230,28 @@ void initActuators() {
   ledcAttach(PIN_LED_BLUE, LED_PWM_FREQ, LED_PWM_RESOLUTION);
   ledcWrite(PIN_LED_BLUE, 0);
 
-  // Speaker PWM
-  ledcAttach(PIN_SPEAKER, SPEAKER_PWM_FREQ, SPEAKER_PWM_RESOLUTION);
-  ledcWrite(PIN_SPEAKER, 0);
+  // I2S speaker — MAX98357A
+  i2s_config_t i2s_config = {};
+  i2s_config.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX);
+  i2s_config.sample_rate = I2S_SAMPLE_RATE;
+  i2s_config.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT;
+  i2s_config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT;
+  i2s_config.communication_format = I2S_COMM_FORMAT_STAND_I2S;
+  i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;
+  i2s_config.dma_buf_count = 4;
+  i2s_config.dma_buf_len = I2S_BUFFER_SIZE;
+  i2s_config.use_apll = false;
+  i2s_config.tx_desc_auto_clear = true;
+
+  i2s_pin_config_t pin_config = {};
+  pin_config.bck_io_num = PIN_I2S_BCLK;
+  pin_config.ws_io_num = PIN_I2S_LRC;
+  pin_config.data_out_num = PIN_I2S_DIN;
+  pin_config.data_in_num = I2S_PIN_NO_CHANGE;
+
+  i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+  i2s_set_pin(I2S_PORT, &pin_config);
+  i2s_zero_dma_buffer(I2S_PORT);
 
   // Zapper
   pinMode(PIN_ZAPPER_ENABLE, OUTPUT);
@@ -323,14 +349,25 @@ void controlSpeaker() {
       state.currentFreq = MOSQUITO_FREQ_BASE +
         (sin(now * 0.003) * MOSQUITO_FREQ_VAR);
 
-      // Set frequency then duty cycle for volume
-      ledcWriteTone(PIN_SPEAKER, state.currentFreq);
-      ledcWrite(PIN_SPEAKER, state.speakerVolume);
+      // Generate sine wave samples and send via I2S
+      int16_t samples[I2S_BUFFER_SIZE];
+      float amplitude = (float)state.speakerVolume / 255.0 * MOSQUITO_VOLUME;
+      for (int i = 0; i < I2S_BUFFER_SIZE; i += 2) {
+        float t = (float)i / (float)I2S_SAMPLE_RATE;
+        int16_t sample = (int16_t)(amplitude * sin(2.0 * PI * state.currentFreq * t));
+        samples[i] = sample;      // left
+        samples[i + 1] = sample;  // right
+      }
 
+      size_t bytes_written;
+      i2s_write(I2S_PORT, samples, sizeof(samples), &bytes_written, portMAX_DELAY);
       state.lastFreqUpdate = now;
     }
   } else {
-    ledcWrite(PIN_SPEAKER, 0);
+    // Silence
+    int16_t silence[I2S_BUFFER_SIZE] = {0};
+    size_t bytes_written;
+    i2s_write(I2S_PORT, silence, sizeof(silence), &bytes_written, portMAX_DELAY);
   }
 }
 
