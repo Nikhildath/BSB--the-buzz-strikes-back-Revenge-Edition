@@ -106,14 +106,11 @@ For Hardware:
 *Schematic showing power distribution (12V to 5V to 3.3V) and signal routing*
 
 # Build Photos
-![Components](Add photo of your components here)
-*All components: 2x ESP32, OLED, MAX98357A amplifier, speaker, IR sensor, HC-SR04, LEDs, MOSFETs, touch sensors, HV module, buck converter*
+![Build](WhatsApp%20Image%202026-09-06%20at%2012.35.54%20AM.jpeg)
+*Breadboard prototype: ESP32 with OLED display showing emotic eyes, blue LED attractant, HC-SR04 ultrasonic sensor, and MAX98357A amplifier — all wired up and running*
 
-![Build](Add photos of build process here)
-*Assembly steps: soldering header pins, connecting sensors, wiring amplifier, mounting components*
-
-![Final](Add photo of final product here)
-*Completed trap with OLED showing emotic face, speaker mounted, and all wiring enclosed*
+![Team](WhatsApp%20Image%202026-09-06%20at%2012.35.55%20AM.jpeg)
+*Team BSB at work: Nikhil and Ajay debugging firmware with multiple laptops, breadboard circuits, and the trap hardware spread across the desk — chaos in its purest form*
 
 ### Project Demo
 # Video
