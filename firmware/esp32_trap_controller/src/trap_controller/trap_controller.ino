@@ -20,6 +20,7 @@
 #define PIN_I2S_BCLK      5
 #define PIN_I2S_LRC       18
 #define PIN_I2S_DIN       19
+#define PIN_AMP_ENABLE    22   // MAX98357A SD/EN pin — pull HIGH to enable
 #define PIN_ZAPPER_ENABLE 32
 #define PIN_STATUS_LED    33
 #define PIN_BUILDIN_LED   2
@@ -33,7 +34,7 @@
 // Speaker/I2S settings (MAX98357A)
 #define I2S_PORT            I2S_NUM_0
 #define I2S_SAMPLE_RATE     44100
-#define I2S_BUFFER_SIZE     256
+#define I2S_BUFFER_SIZE     512
 
 // Mosquito sound frequencies (female wingbeat = 400-600Hz)
 #define MOSQUITO_FREQ_BASE  450
@@ -95,6 +96,7 @@ void readIRSensor();
 void readHCSR04();
 void controlLED();
 void controlSpeaker();
+void testSpeaker();
 void controlZapper();
 void sendStatusUpdate();
 void sendHeartbeat();
@@ -125,13 +127,10 @@ void setup() {
   initESPNow();
 
   // =========================
-  // TEST: Speaker without ESP-NOW
+  // TEST: Speaker hardware verification
   // Remove this after confirming sound works
   // =========================
-  state.buzzEnabled = true;
-  state.mode = MODE_AUTO;
-  state.speakerVolume = 200;
-  Serial.println("TEST: Speaker ON");
+  testSpeaker();
 
   Serial.println("=== Trap Controller Ready ===\n");
 }
@@ -239,15 +238,21 @@ void initActuators() {
   // MAX98357A I2S SPEAKER
   // =========================
 
+  // Enable amplifier (SD/EN pin must be HIGH)
+  pinMode(PIN_AMP_ENABLE, OUTPUT);
+  digitalWrite(PIN_AMP_ENABLE, HIGH);
+  delay(50);  // Allow amp to power up
+  Serial.println("Amplifier enabled (SD/EN HIGH)");
+
   i2s_config_t i2s_config = {};
   i2s_config.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX);
   i2s_config.sample_rate = I2S_SAMPLE_RATE;
   i2s_config.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT;
   i2s_config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT;
-  i2s_config.communication_format = I2S_COMM_FORMAT_STAND_I2S;
+  i2s_config.communication_format = I2S_COMM_FORMAT_STAND_MSB;
   i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;
   i2s_config.dma_buf_count = 8;
-  i2s_config.dma_buf_len = 256;
+  i2s_config.dma_buf_len = 512;
   i2s_config.use_apll = false;
   i2s_config.tx_desc_auto_clear = true;
   i2s_config.fixed_mclk = 0;
@@ -408,7 +413,34 @@ void controlSpeaker() {
 
   // Continuously feed I2S
   size_t bytes_written = 0;
-  i2s_write(I2S_PORT, samples, sizeof(samples), &bytes_written, 0);
+  esp_err_t err = i2s_write(I2S_PORT, samples, sizeof(samples), &bytes_written, 0);
+  if (err != ESP_OK) {
+    Serial.printf("I2S write error: %d\n", err);
+  }
+}
+
+// ===== Speaker Test =====
+void testSpeaker() {
+  Serial.println("=== SPEAKER TEST ===");
+
+  // Generate 1kHz test tone
+  const int testSamples = 512;
+  int16_t audioBuffer[testSamples];
+  for (int i = 0; i < testSamples; i++) {
+    audioBuffer[i] = (int16_t)(sin(2.0 * PI * 1000.0 * i / 44100.0) * 20000);
+  }
+
+  // Play for 2 seconds
+  for (int repeat = 0; repeat < 100; repeat++) {
+    size_t bytesWritten;
+    i2s_write(I2S_PORT, audioBuffer, sizeof(audioBuffer), &bytesWritten, portMAX_DELAY);
+    if (bytesWritten != sizeof(audioBuffer)) {
+      Serial.printf("Only wrote %d bytes\n", bytesWritten);
+    }
+    delay(10);
+  }
+
+  Serial.println("=== TEST COMPLETE ===");
 }
 
 void controlZapper() {

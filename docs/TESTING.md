@@ -62,7 +62,7 @@
 
 ## Test 5: Speaker/Audio System
 
-**Setup:** Speaker + MAX98357A amplifier on GPIO 5/18/19
+**Setup:** Speaker + MAX98357A amplifier on GPIO 5/18/19/22
 
 **Procedure:**
 1. Click Buzz ON → verify mosquito buzzing sound

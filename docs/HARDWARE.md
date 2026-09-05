@@ -74,6 +74,7 @@
 | 5 | I2S BCLK | Output | To MAX98357A BCLK |
 | 18 | I2S LRC | Output | To MAX98357A LRC |
 | 19 | I2S DIN | Output | To MAX98357A DIN |
+| 22 | Amp Enable | Output | MAX98357A SD/EN (pull HIGH) |
 | 32 | Zapper Enable | Output | IRF540N MOSFET gate (via 1kΩ) |
 | 33 | Status LED | Output | Green LED (heartbeat indicator) |
 | 2 | Built-in LED | Output | Debug indicator |
@@ -133,18 +134,20 @@ ESP32               MAX98357A Amplifier        Speaker
 GPIO 5  ──────────► BCLK (Bit Clock)     ┌──────┐
 GPIO 18 ──────────► LRC (Word Select)  OUT+ ┤      ├──┐
 GPIO 19 ──────────► DIN (Data In)      OUT- ┤  L   │  ├──► Speaker +
+GPIO 22 ──────────► SD/EN (Enable)        │      │  │
                                           │      │  │
 GND ──────────────► GND              GND ──┤      │  ├──► Speaker -
                                           └──────┘
 5V ───────────────► VIN
 ```
 
-**5 wires from ESP32 to MAX98357A:**
+**6 wires from ESP32 to MAX98357A:**
 1. GPIO 5 → BCLK (Bit Clock)
 2. GPIO 18 → LRC (Left/Right Clock)
 3. GPIO 19 → DIN (Serial Data In)
-4. 5V → VIN
-5. GND → GND
+4. GPIO 22 → SD/EN (Shutdown/Enable — HIGH = on)
+5. 5V → VIN
+6. GND → GND
 
 **MAX98357A gain:** GAIN → GND = 12dB (as wired)
 

@@ -97,6 +97,7 @@ firmware/esp32_ui_gateway/src/mosquito_protocol.h
 | D5  | 5  | MAX98357A BCLK | Yellow |
 | D18 | 18 | MAX98357A LRC | Yellow |
 | D19 | 19 | MAX98357A DIN | Yellow |
+| D22 | 22 | MAX98357A SD/EN | Yellow |
 | D32 | 32 | MOSFET Gate → Zapper | Red |
 | D33 | 33 | Status LED | White |
 | D2 | 2 | Built-in LED | — |
@@ -151,7 +152,7 @@ The voltage divider reduces 5V → 3.0V (safe for 3.3V GPIO).
 
 **Parts:** 1x 10kΩ, 1x 15kΩ
 
-### D. Speaker + MAX98357A Amplifier (GPIO 5, 18, 19)
+### D. Speaker + MAX98357A Amplifier (GPIO 5, 18, 19, 22)
 
 ```
 ESP32               MAX98357A Amplifier        Speaker
@@ -159,6 +160,7 @@ ESP32               MAX98357A Amplifier        Speaker
 GPIO 5  ──────────► BCLK (Bit Clock)     ┌──────┐
 GPIO 18 ──────────► LRC (Word Select)  OUT+ ┤      ├──┐
 GPIO 19 ──────────► DIN (Data In)      OUT- ┤  L   │  ├──► Speaker +
+GPIO 22 ──────────► SD/EN (Enable)        │      │  │
                                           │      │  │
 GND ──────────────► GND              GND ──┤      │  ├──► Speaker -
                                           └──────┘
@@ -166,12 +168,13 @@ GND ──────────────► GND              GND ──┤
 GND ──────────────► GND
 ```
 
-**MAX98357A I2S Amplifier — 5 wires from ESP32:**
+**MAX98357A I2S Amplifier — 6 wires from ESP32:**
 1. GPIO 5 → BCLK (Bit Clock)
 2. GPIO 18 → LRC (Left/Right Clock, word select)
 3. GPIO 19 → DIN (Serial Data In)
-4. 5V → VIN
-5. GND → GND (common ground with ESP32)
+4. GPIO 22 → SD/EN (Shutdown/Enable — pull HIGH to enable amp)
+5. 5V → VIN
+6. GND → GND (common ground with ESP32)
 
 **MAX98357A additional pins:**
 - GAIN → GND = 12dB (as wired)
