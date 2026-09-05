@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../../Downloads/esp32-eyes-main/esp32-eyes-main"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "esp",
+		"liveServer.settings.port": 5501
+	}
+}

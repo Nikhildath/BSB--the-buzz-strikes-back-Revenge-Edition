@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mosquito Trap Dashboard</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="header">
+  <h1>Mosquito Trap Dashboard</h1>
+  <div class="header-right">
+    <span id="connStatus" class="status-badge status-offline">Disconnected</span>
+    <span id="clock" class="clock"></span>
+  </div>
+</div>
+<div class="container">
+  <!-- Lift Alert Banner -->
+  <div class="lift-alert" id="liftAlert" style="display:none">
+    <span class="lift-alert-icon">!</span>
+    <span class="lift-alert-text">TRAP LIFTED - Tamper Alert Active</span>
+  </div>
+
+  <!-- Status Cards Row -->
+  <div class="status-grid">
+    <div class="status-card" id="trapCard">
+      <div class="status-icon" id="trapIcon">?</div>
+      <div class="status-info">
+        <div class="status-title">Trap</div>
+        <div class="status-value" id="trapStatus">--</div>
+      </div>
+    </div>
+    <div class="status-card">
+      <div class="status-icon" id="ledIcon">LED</div>
+      <div class="status-info">
+        <div class="status-title">Blue LED</div>
+        <div class="status-value" id="ledStatus">--</div>
+      </div>
+    </div>
+    <div class="status-card">
+      <div class="status-icon" id="buzzIcon">BZZ</div>
+      <div class="status-info">
+        <div class="status-title">Buzzing</div>
+        <div class="status-value" id="buzzStatus">--</div>
+      </div>
+    </div>
+    <div class="status-card">
+      <div class="status-icon" id="irIcon">IR</div>
+      <div class="status-info">
+        <div class="status-title">IR Sensor</div>
+        <div class="status-value" id="irStatus">--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- Left Column -->
+    <div class="left-col">
+      <!-- Face Display -->
+      <div class="card face-card">
+        <h3>Trap Emotion</h3>
+        <div class="face-display">
+          <canvas id="faceCanvas" width="150" height="150"></canvas>
+          <div class="emotion-label" id="emotionLabel">Happy</div>
+        </div>
+      </div>
+
+      <!-- Detection Counter -->
+      <div class="card counter-card">
+        <h3>Detection Counter</h3>
+        <div class="counter-value" id="detectionCount">0</div>
+        <div class="counter-label">mosquitoes detected</div>
+        <div class="counter-bar">
+          <div class="counter-bar-fill" id="counterBar"></div>
+        </div>
+      </div>
+
+      <!-- Sensors -->
+      <div class="card">
+        <h3>Sensors</h3>
+        <div class="sensor-row">
+          <span class="sensor-label">HC-SR04 Distance</span>
+          <span class="sensor-value" id="distance">-- cm</span>
+        </div>
+        <div class="sensor-row">
+          <span class="sensor-label">Trap Position</span>
+          <span class="sensor-value" id="liftStatus">Normal</span>
+        </div>
+        <div class="sensor-row">
+          <span class="sensor-label">Operating Mode</span>
+          <span class="sensor-value" id="modeStatus">--</span>
+        </div>
+        <div class="sensor-row">
+          <span class="sensor-label">System Uptime</span>
+          <span class="sensor-value" id="uptime">--</span>
+        </div>
+        <div class="sensor-row">
+          <span class="sensor-label">Free Memory</span>
+          <span class="sensor-value" id="freeHeap">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-col">
+      <!-- Controls -->
+      <div class="card">
+        <h3>Controls</h3>
+        <div class="control-group">
+          <label>LED Control</label>
+          <div class="btn-row">
+            <button class="btn btn-success" onclick="sendCmd(1,0)">ON</button>
+            <button class="btn btn-danger" onclick="sendCmd(2,0)">OFF</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>LED Brightness: <span id="brightnessVal">128</span></label>
+          <input type="range" class="slider" min="0" max="255" value="128" id="brightnessSlider" oninput="updateBrightness(this.value)">
+        </div>
+        <div class="control-group">
+          <label>Buzzing (Mosquito Sound)</label>
+          <div class="btn-row">
+            <button class="btn btn-success" onclick="sendCmd(4,0)">ON</button>
+            <button class="btn btn-danger" onclick="sendCmd(5,0)">OFF</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Speaker Volume: <span id="volumeVal">128</span></label>
+          <input type="range" class="slider" min="0" max="255" value="128" id="volumeSlider" oninput="updateVolume(this.value)">
+        </div>
+        <div class="control-group">
+          <label>Zapper</label>
+          <div class="btn-row">
+            <button class="btn btn-warning" onclick="sendCmd(6,0)">ARM</button>
+            <button class="btn btn-secondary" onclick="sendCmd(7,0)">DISARM</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Operating Mode</label>
+          <div class="btn-row mode-row">
+            <button class="btn btn-primary active" id="modeBtn0" onclick="setMode(0)">Auto</button>
+            <button class="btn btn-secondary" id="modeBtn1" onclick="setMode(1)">Manual</button>
+            <button class="btn btn-secondary" id="modeBtn2" onclick="setMode(2)">Schedule</button>
+            <button class="btn btn-secondary" id="modeBtn3" onclick="setMode(3)">Silent</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <div class="btn-row">
+            <button class="btn btn-danger" onclick="sendCmd(9,0)">Reset Counter</button>
+            <button class="btn btn-secondary" onclick="if(confirm('Restart trap?'))sendCmd(10,0)">Restart</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Status -->
+      <div class="card">
+        <h3>System Health</h3>
+        <div id="errorBadges" class="error-container">
+          <span class="ok-badge">All systems OK</span>
+        </div>
+      </div>
+
+      <!-- Detection Log -->
+      <div class="card">
+        <h3>Recent Detections</h3>
+        <div class="detection-log" id="detectionLog">
+          <div class="detection-empty">No detections yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
