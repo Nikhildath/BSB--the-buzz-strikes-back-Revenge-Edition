@@ -121,8 +121,8 @@ void handleRoot();
 void handleAPI();
 void handleData();
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
-void onDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len);
-void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
+void onDataRecv(const esp_now_recv_info *info, const uint8_t *data, int len);
+void onDataSent(const wifi_tx_info_t *info, esp_now_send_status_t status);
 void sendCommand(uint8_t cmd, uint8_t param);
 void updateOLED();
 void drawFace(int x, int y, uint8_t emotion);
@@ -376,7 +376,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 // ===== ESP-NOW Callbacks =====
-void onDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len) {
+void onDataRecv(const esp_now_recv_info *info, const uint8_t *data, int len) {
   if (len == sizeof(TrapMessage)) {
     TrapMessage* msg = (TrapMessage*)data;
 
@@ -426,7 +426,7 @@ void onDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len) {
   }
 }
 
-void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+void onDataSent(const wifi_tx_info_t *info, esp_now_send_status_t status) {
   if (status != ESP_NOW_SEND_SUCCESS) {
     Serial.println("ESP-NOW send failed");
   }
