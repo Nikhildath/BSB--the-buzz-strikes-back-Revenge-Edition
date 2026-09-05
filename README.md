@@ -1,168 +1,136 @@
-# Mosquito Trap & Monitoring System
+<img width="1280" height="640" alt="BSB Banner" src="https://github.com/user-attachments/assets/8920b256-2ba8-4988-b824-5351134eb4bd" />
 
-Fully automated mosquito trap using two ESP32 boards, ESP-NOW communication, sensors, OLED touchscreen with animated faces, and a web-based control dashboard.
 
-## System Overview
 
-```
-┌──────────────────┐   ESP-NOW   ┌──────────────────┐
-│   ESP32 #1       │◄───────────►│   ESP32 #2       │
-│   Trap Controller│  (2.4GHz)   │   UI Gateway     │
-│                  │             │                  │
-│  Blue LED (PWM)  │             │  OLED 128x64    │
-│  IR Sensor       │             │  Touch Sensors   │
-│  HC-SR04         │             │  Web Server      │
-│  Speaker+Amp     │             │  WebSocket       │
-│  Zapper (MOSFET) │             │  Wi-Fi AP+STA   │
-└──────────────────┘             └──────────────────┘
-```
+# BSB - Buzz Strikes Back
 
-## Features
 
-- **Blue LED attractant** with adjustable PWM brightness
-- **IR sensor** for mosquito detection with 2s debounce
-- **HC-SR04** ultrasonic for height monitoring and **lift detection**
-- **Speaker + MAX98357A amplifier** for mosquito buzzing sound (400-500Hz varying)
-- **Zapper control** with safety MOSFET driver
-- **OLED touchscreen** with 5 animated face emotions
-- **Touch sensors** for emotion cycling and buzz toggle
-- **Lift detection** — HC-SR04 monitors ground height, scared face when trap is lifted
-- **Real-time web dashboard** with WebSocket updates (no page refresh)
-- **ESP-NOW** low-latency inter-board communication with manual MAC addresses
-- **Multiple operating modes**: Auto, Manual, Schedule, Silent
-- **Detection counter** with timestamp logging
-- **Volume control** for speaker output
-- **Error monitoring** and status reporting
+## Basic Details
+### Team Name: BSB
 
-## OLED Emotions
 
-| # | Face | When |
-|---|------|------|
-| 0 | Happy | Normal operation |
-| 1 | Neutral | Manual mode |
-| 2 | Angry | Mosquito detected / buzzing active |
-| 3 | Sleeping | Silent/disabled mode |
-| 4 | Scared | Trap has been lifted |
+### Team Members
+- Team Lead: Nikhil Dath
+- Member 2: Ajay Krishna KS
 
-Touch sensor 1 cycles through all 5 emotions.
-Touch sensor 2 toggles speaker on/off.
+### Project Description
+A fully automated mosquito trap that uses two ESP32 boards communicating via ESP-NOW. It lures mosquitoes with blue LED light, detects them with an IR sensor, plays back their own annoying buzzing sound through a speaker, and zaps them with a high-voltage grid. An OLED display shows animated emotic faces that react to trap events, and a real-time web dashboard lets you monitor everything from your phone.
 
-## Quick Start
+### The Problem (that doesn't exist)
+Mosquitoes go around all day making that annoying buzzing sound, but they never have to listen to it themselves. This is deeply unfair. How are they supposed to know how annoying they are if they never experience it from the other side?
 
-### Prerequisites
-- [PlatformIO](https://platformio.org/) or Arduino IDE
-- 2x ESP32 DevKit V1 boards
-- All components listed in `docs/HARDWARE.md`
+### The Solution (that nobody asked for)
+We built a trap that records the mosquito's own buzzing frequency (400-600Hz female wingbeat) and blasts it back at them through a speaker with a MAX98357A amplifier. The trap lures them in with blue LED light, detects them with an IR sensor, plays their own annoying sound back at them, and then zaps them with a high-voltage grid. The OLED display even shows emotic faces that get scared when someone lifts the trap. Science has gone too far.
 
-### Step 1: MAC Addresses (Already Set)
 
-Both ESP32 boards have manual MAC addresses hardcoded. No need to read MACs.
+## Technical Details
+### Technologies/Components Used
+For Software:
+- Languages used: C++ (Arduino/ESP-IDF), HTML, CSS, JavaScript
+- Frameworks used: Arduino Core for ESP32 (v3.3.11), PlatformIO
+- Libraries used: ESP-NOW, WiFi, WebSockets, U8g2 (OLED), ESP32-Eyes (emotic display), I2S (audio)
+- Tools used: PlatformIO, Arduino IDE, Git
 
-| Board | MAC Address |
-|-------|-------------|
-| ESP32 #1 (Trap) | `02:00:00:00:00:01` |
-| ESP32 #2 (Gateway) | `02:00:00:00:00:02` |
+For Hardware:
+- ESP32 DevKit V1 (WROOM-32) x2
+- OLED Display 0.96" I2C 128x64 (SSD1306) with U8g2 library
+- MAX98357A I2S Amplifier Module (3W)
+- Speaker 4-ohm 3W
+- IR Break-Beam Sensor (FC-03)
+- HC-SR04 Ultrasonic Sensor
+- Blue LED 470nm (x4)
+- IRLZ44N Logic-Level MOSFET
+- IRF540N N-Channel MOSFET
+- TTP223 Capacitive Touch Sensors (x2)
+- HV Boost Converter Module
+- 12V DC Power Adapter (2A)
+- LM2596 Buck Converter (12V to 5V)
+- AMS1117-3.3V LDO (5V to 3.3V)
 
-### Step 2: Update WiFi Credentials
-
-In `firmware/esp32_ui_gateway/src/ui_gateway.ino`:
-```cpp
-const char* STASSID = "YOUR_WIFI_SSID";
-const char* STAPASS = "YOUR_WIFI_PASS";
-```
-
-### Step 3: Copy Protocol Header
-
-Copy `firmware/common/mosquito_protocol.h` to both:
-```
-firmware/esp32_trap_controller/src/mosquito_protocol.h
-firmware/esp32_ui_gateway/src/mosquito_protocol.h
-```
-
-### Step 4: Upload Firmware
-
+### Implementation
+For Software:
+# Installation
 ```bash
-# ESP32 #1 (Trap Controller)
+# Clone the repository
+git clone https://github.com/Nikhildath/BSB--the-buzz-strikes-back-Revenge-Edition.git
+cd BSB--the-buzz-strikes-back-Revenge-Edition
+
+# Copy protocol header to both firmware directories
+cp firmware/common/mosquito_protocol.h firmware/esp32_trap_controller/src/
+cp firmware/common/mosquito_protocol.h firmware/esp32_ui_gateway/src/
+
+# Install PlatformIO (if not already installed)
+pip install platformio
+```
+
+# Run
+```bash
+# Upload to ESP32 #1 (Trap Controller)
 cd firmware/esp32_trap_controller
 pio run -t upload
 
-# ESP32 #2 (UI Gateway)
+# Upload to ESP32 #2 (UI Gateway)
 cd firmware/esp32_ui_gateway
 pio run -t upload
+
+# Or use Arduino IDE:
+# Open firmware/esp32_ui_gateway/src/ui_gateway/ui_gateway.ino
+# Select board: ESP32 Dev Module
+# Upload
 ```
 
-### Step 5: Access Dashboard
+### Project Documentation
+For Software:
 
-1. Connect to `MosquitoTrap` WiFi (password: `trap1234`)
-2. Open browser to `http://192.168.4.1`
+# Screenshots (Add at least 3)
+![Screenshot1](Add screenshot 1 here with proper name)
+*Web dashboard showing real-time trap status, emotion face, and controls*
 
-## Project Structure
+![Screenshot2](Add screenshot 2 here with proper name)
+*OLED display showing animated emotic eyes (Happy face)*
 
-```
-mosquito-trap/
-├── firmware/
-│   ├── common/
-│   │   └── mosquito_protocol.h        # Shared ESP-NOW protocol
-│   ├── esp32_trap_controller/
-│   │   └── src/
-│   │       ├── trap_controller.ino     # Trap firmware
-│   │       └── mosquito_protocol.h     # Copy here
-│   │   └── platformio.ini
-│   └── esp32_ui_gateway/
-│       └── src/
-│           ├── ui_gateway.ino          # Gateway firmware
-│           └── mosquito_protocol.h     # Copy here
-│       └── platformio.ini
-├── web/
-│   ├── index.html                      # Dashboard HTML
-│   ├── css/style.css                  # Styles
-│   └── js/app.js                      # Client JavaScript
-├── docs/
-│   ├── ARCHITECTURE.md                # System design
-│   ├── HARDWARE.md                    # BOM and wiring
-│   ├── WIRING.md                      # Step-by-step wiring guide
-│   └── TESTING.md                     # Test procedures
-└── README.md
-```
+![Screenshot3](Add screenshot 3 here with proper name)
+*Serial Monitor showing distance readings and lift detection*
 
-## ESP-NOW Protocol
+# Diagrams
+![Workflow](Add your workflow/architecture diagram here)
+*System architecture showing ESP32 #1 (Trap) communicating with ESP32 #2 (Gateway) via ESP-NOW, with sensor inputs, actuator outputs, and web dashboard*
 
-Messages are 16-byte packed structs with XOR checksum validation.
+For Hardware:
 
-| Type | Value | Direction | Description |
-|------|-------|-----------|-------------|
-| STATUS_UPDATE | 0x00 | Trap→GW | Periodic status (every 2s) |
-| COMMAND | 0x01 | GW→Trap | User command |
-| ACK | 0x02 | Both | Acknowledgement |
-| HEARTBEAT | 0x03 | Both | Keep-alive (every 5s) |
-| DETECTION_EVENT | 0x04 | Trap→GW | Mosquito detected |
-| CONFIG_UPDATE | 0x05 | GW→Trap | Settings change |
-| LIFT_ALERT | 0x06 | Trap→GW | Trap has been lifted |
+# Schematic & Circuit
+![Circuit](Add your circuit diagram here)
+*Complete wiring diagram showing ESP32 connections to all sensors, amplifier, MOSFETs, and OLED*
 
-### Commands
+![Schematic](Add your schematic diagram here)
+*Schematic showing power distribution (12V to 5V to 3.3V) and signal routing*
 
-| Command | Value | Param | Description |
-|---------|-------|-------|-------------|
-| CMD_LED_ON | 0x01 | — | Turn blue LED on |
-| CMD_LED_OFF | 0x02 | — | Turn blue LED off |
-| CMD_LED_BRIGHTNESS | 0x03 | 0-255 | Set LED brightness |
-| CMD_BUZZ_ON | 0x04 | — | Start mosquito sound |
-| CMD_BUZZ_OFF | 0x05 | — | Stop mosquito sound |
-| CMD_ZAPPER_ON | 0x06 | — | Arm zapper |
-| CMD_ZAPPER_OFF | 0x07 | — | Disarm zapper |
-| CMD_SET_MODE | 0x08 | 0-3 | Set operating mode |
-| CMD_RESET_COUNTER | 0x09 | — | Reset detection count |
-| CMD_RESTART | 0x0A | — | Restart ESP32 |
-| CMD_SET_VOLUME | 0x0B | 0-255 | Set speaker volume |
+# Build Photos
+![Components](Add photo of your components here)
+*All components: 2x ESP32, OLED, MAX98357A amplifier, speaker, IR sensor, HC-SR04, LEDs, MOSFETs, touch sensors, HV module, buck converter*
 
-## Safety Notes
+![Build](Add photos of build process here)
+*Assembly steps: soldering header pins, connecting sensors, wiring amplifier, mounting components*
 
-- High-voltage zapper section must be physically isolated
-- Use fuse protection on all power rails
-- HV capacitor needs bleeder resistor for safe discharge
-- Never expose conductive parts to user access
-- ESP32 low-voltage section is isolated from HV by design
+![Final](Add photo of final product here)
+*Completed trap with OLED showing emotic face, speaker mounted, and all wiring enclosed*
 
-## License
+### Project Demo
+# Video
+[Add your demo video link here]
+*Video demonstrating the trap in action: blue LED luring, mosquito detection, speaker buzzing, zapper firing, OLED face reactions, and web dashboard monitoring*
 
-MIT
+# Additional Demos
+- Web dashboard accessible at `http://192.168.4.1` after connecting to `MosquitoTrap` WiFi (password: `trap1234`)
+- Live WebSocket updates showing sensor readings in real-time
+
+## Team Contributions
+- Nikhil Dath: System architecture, ESP-NOW protocol design, firmware development for both ESP32 boards, web dashboard, ESP32-Eyes emotic display integration, I2S audio system, documentation
+- Ajay Krishna KS: Hardware assembly, circuit design, sensor integration, testing and debugging
+
+
+---
+Made with &#10084;&#65039; at TinkerHub Useless Projects 
+
+![Static Badge](https://img.shields.io/badge/TinkerHub-24?color=%23000000&link=https%3A%2F%2Fwww.tinkerhub.org%2F)
+![Static Badge](https://img.shields.io/badge/UselessProjects--26-26?link=https%3A%2F%2Ftinkerhub.org%2Fevents%2F1M8ORET9A1%2Fuseless-projects-3.0)
