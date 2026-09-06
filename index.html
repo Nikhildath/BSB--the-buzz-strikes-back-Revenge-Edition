@@ -1,1 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BSB - Buzz Strikes Back</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      overflow-x: hidden;
+    }
+
+    /* Hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 70%);
+      padding: 2rem;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      letter-spacing: -2px;
+    }
+
+    .hero .subtitle {
+      font-size: 1.5rem;
+      color: #94a3b8;
+      margin-bottom: 2rem;
+      font-weight: 300;
+    }
+
+    .hero .tagline {
+      font-size: 1.1rem;
+      color: #64748b;
+      max-width: 600px;
+      line-height: 1.8;
+      margin-bottom: 3rem;
+    }
+
+    .emoji-row {
+      font-size: 3rem;
+      margin-bottom: 2rem;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s;
+      margin: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(59,130,246,0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      color: #e0e0e0;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+
+    /* Sections */
+    section {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-subtitle {
+      color: #64748b;
+      font-size: 1.1rem;
+      margin-bottom: 3rem;
+      max-width: 600px;
+    }
+
+    /* Problem / Solution */
+    .problem-solution {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: all 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(59,130,246,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #f1f5f9;
+    }
+
+    .card p {
+      color: #94a3b8;
+      line-height: 1.7;
+    }
+
+    .card-emoji {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* How it works */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .step {
+      text-align: center;
+      padding: 2rem 1rem;
+      background: rgba(255,255,255,0.02);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .step-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .step h4 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: #f1f5f9;
+    }
+
+    .step p {
+      font-size: 0.85rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* Tech stack */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .tech-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .tech-item .icon {
+      font-size: 1.5rem;
+    }
+
+    .tech-item .info h4 {
+      font-size: 0.95rem;
+      color: #f1f5f9;
+    }
+
+    .tech-item .info p {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    /* Gallery */
+    .gallery {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .gallery img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: transform 0.3s;
+    }
+
+    .gallery img:hover {
+      transform: scale(1.02);
+    }
+
+    .gallery .caption {
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+
+    /* Video */
+    .video-section {
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    .video-section video {
+      width: 100%;
+      max-width: 700px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Emotions */
+    .emotions-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .emotion-card {
+      text-align: center;
+      padding: 1.5rem 1rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: all 0.3s;
+    }
+
+    .emotion-card:hover {
+      border-color: rgba(59,130,246,0.3);
+      transform: translateY(-4px);
+    }
+
+    .emotion-card .face {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .emotion-card h4 {
+      font-size: 0.9rem;
+      color: #f1f5f9;
+      margin-bottom: 0.3rem;
+    }
+
+    .emotion-card p {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    /* Team */
+    .team-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+      max-width: 600px;
+    }
+
+    .team-card {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .team-card .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .team-card h4 {
+      font-size: 1.1rem;
+      color: #f1f5f9;
+      margin-bottom: 0.3rem;
+    }
+
+    .team-card .role {
+      font-size: 0.85rem;
+      color: #8b5cf6;
+      margin-bottom: 0.5rem;
+    }
+
+    .team-card p {
+      font-size: 0.8rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      color: #475569;
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: #8b5cf6;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.5rem; }
+      .hero .subtitle { font-size: 1.1rem; }
+      .problem-solution { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr 1fr; }
+      .emotions-grid { grid-template-columns: repeat(3, 1fr); }
+      .gallery { grid-template-columns: 1fr; }
+      .team-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="emoji-row">🦟🔊💥</div>
+    <h1>BSB</h1>
+    <div class="subtitle">Buzz Strikes Back</div>
+    <p class="tagline">
+      A fully automated mosquito trap that makes mosquitoes experience their own annoying buzzing sound,
+      then zaps them. Built with 2x ESP32, ESP-NOW, I2S audio, OLED emotic faces, and a web dashboard.
+      Because science has gone too far.
+    </p>
+    <a href="https://github.com/Nikhildath/BSB--the-buzz-strikes-back-Revenge-Edition" class="btn btn-primary">View on GitHub</a>
+    <a href="#how-it-works" class="btn btn-secondary">How It Works</a>
+  </div>
+
+  <!-- Problem / Solution -->
+  <section>
+    <div class="section-title">The Problem</div>
+    <div class="section-subtitle">That doesn't exist</div>
+    <div class="problem-solution">
+      <div class="card">
+        <div class="card-emoji">😤</div>
+        <h3>Mosquitoes are annoying</h3>
+        <p>They fly around all day making that high-pitched buzzing sound right next to your ear at 3 AM. But they never have to listen to it themselves. This is deeply unfair.</p>
+      </div>
+      <div class="card">
+        <div class="card-emoji">💡</div>
+        <h3>The Solution</h3>
+        <p>We built a trap that records their own wingbeat frequency (400-600Hz) and blasts it back at them through a speaker. Lure them in with blue LED, detect them, make them suffer, then zap them. Justice served.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works">
+    <div class="section-title">How It Works</div>
+    <div class="section-subtitle">5 steps to mosquito revenge</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h4>Lure</h4>
+        <p>Blue LED light at 470nm wavelength attracts mosquitoes to the trap</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h4>Detect</h4>
+        <p>IR break-beam sensor detects when a mosquito enters the trap zone</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h4>Torture</h4>
+        <p>MAX98357A amplifier plays their own buzzing sound back at them through a speaker</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h4>Zap</h4>
+        <p>High-voltage grid fires via MOSFET driver, eliminating the mosquito</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- OLED Emotions -->
+  <section>
+    <div class="section-title">OLED Emotic Faces</div>
+    <div class="section-subtitle">The trap has feelings too</div>
+    <div class="emotions-grid">
+      <div class="emotion-card">
+        <div class="face">&#128522;</div>
+        <h4>Happy</h4>
+        <p>Normal operation</p>
+      </div>
+      <div class="emotion-card">
+        <div class="face">&#128528;</div>
+        <h4>Neutral</h4>
+        <p>Manual mode</p>
+      </div>
+      <div class="emotion-card">
+        <div class="face">&#128545;</div>
+        <h4>Angry</h4>
+        <p>Mosquito detected</p>
+      </div>
+      <div class="emotion-card">
+        <div class="face">&#128564;</div>
+        <h4>Sleeping</h4>
+        <p>Silent mode</p>
+      </div>
+      <div class="emotion-card">
+        <div class="face">&#128561;</div>
+        <h4>Scared</h4>
+        <p>Trap lifted!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack -->
+  <section>
+    <div class="section-title">Tech Stack</div>
+    <div class="section-subtitle">What powers the madness</div>
+    <div class="tech-grid">
+      <div class="tech-item">
+        <div class="icon">&#128187;</div>
+        <div class="info">
+          <h4>ESP32 x2</h4>
+          <p>Trap controller + UI gateway</p>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="icon">&#128225;</div>
+        <div class="info">
+          <h4>ESP-NOW</h4>
+          <p>Low-latency 2.4GHz comms</p>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="icon">&#127925;</div>
+        <div class="info">
+          <h4>I2S Audio</h4>
+          <p>MAX98357A amplifier + speaker</p>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="icon">&#128187;</div>
+        <div class="info">
+          <h4>OLED 128x64</h4>
+          <p>U8g2 + ESP32-Eyes emotic display</p>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="icon">&#127760;</div>
+        <div class="info">
+          <h4>Web Dashboard</h4>
+          <p>WebSocket real-time monitoring</p>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="icon">&#9889;</div>
+        <div class="info">
+          <h4>HV Zapper</h4>
+          <p>MOSFET-driven high voltage grid</p>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="icon">&#128065;</div>
+        <div class="info">
+          <h4>IR Sensor</h4>
+          <p>Break-beam mosquito detection</p>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="icon">&#128167;</div>
+        <div class="info">
+          <h4>HC-SR04</h4>
+          <p>Ultrasonic lift detection</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Build Photos -->
+  <section>
+    <div class="section-title">Build Photos</div>
+    <div class="section-subtitle">From chaos to function</div>
+    <div class="gallery">
+      <div>
+        <img src="WhatsApp%20Image%202026-09-06%20at%2012.35.54%20AM.jpeg" alt="Breadboard prototype">
+        <div class="caption">Breadboard prototype — ESP32, OLED with emotic eyes, blue LED, and sensors all wired up</div>
+      </div>
+      <div>
+        <img src="WhatsApp%20Image%202026-09-06%20at%2012.35.55%20AM.jpeg" alt="Team workspace">
+        <div class="caption">Team BSB at work — debugging firmware across multiple laptops with circuits everywhere</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo Video -->
+  <section>
+    <div class="section-title">Demo Video</div>
+    <div class="section-subtitle">See it in action</div>
+    <div class="video-section">
+      <video controls>
+        <source src="WhatsApp%20Video%202026-09-06%20at%206.43.47%20AM.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </section>
+
+  <!-- Team -->
+  <section>
+    <div class="section-title">Team</div>
+    <div class="section-subtitle">The people behind the madness</div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="avatar">&#128104;&#8205;&#128187;</div>
+        <h4>Nikhil Dath</h4>
+        <div class="role">Team Lead</div>
+        <p>System architecture, ESP-NOW protocol, firmware, web dashboard, ESP32-Eyes integration, I2S audio, documentation</p>
+      </div>
+      <div class="team-card">
+        <div class="avatar">&#128104;&#8205;&#128187;</div>
+        <h4>Ajay Krishna KS</h4>
+        <div class="role">Hardware Lead</div>
+        <p>Hardware assembly, circuit design, sensor integration, testing and debugging</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>
+      Made with &#10084;&#65039; at
+      <a href="https://www.tinkerhub.org/" target="_blank">TinkerHub</a>
+      Useless Projects
+    </p>
+    <p style="margin-top: 0.5rem;">
+      <a href="https://github.com/Nikhildath/BSB--the-buzz-strikes-back-Revenge-Edition">GitHub</a>
+    </p>
+  </footer>
+
+</body>
+</html>
