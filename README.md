@@ -114,7 +114,8 @@ For Hardware:
 
 ### Project Demo
 # Video
-[Add your demo video link here]
+https://github.com/Nikhildath/BSB--the-buzz-strikes-back-Revenge-Edition/raw/main/WhatsApp%20Video%202026-09-06%20at%206.43.47%20AM.mp4
+
 *Video demonstrating the trap in action: blue LED luring, mosquito detection, speaker buzzing, zapper firing, OLED face reactions, and web dashboard monitoring*
 
 # Additional Demos
