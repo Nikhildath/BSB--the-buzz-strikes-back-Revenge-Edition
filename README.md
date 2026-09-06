@@ -118,6 +118,11 @@ https://github.com/Nikhildath/BSB--the-buzz-strikes-back-Revenge-Edition/raw/mai
 
 *Video demonstrating the trap in action: blue LED luring, mosquito detection, speaker buzzing, zapper firing, OLED face reactions, and web dashboard monitoring*
 
+# Hardware Demo
+https://github.com/Nikhildath/BSB--the-buzz-strikes-back-Revenge-Edition/raw/main/WhatsApp%20Video%202026-09-06%20at%208.08.56%20AM.mp4
+
+*Hardware working demo: ESP32 trap controller with MAX98357A speaker playing mosquito buzz, OLED displaying emotic eyes, HC-SR04 ultrasonic sensor, and blue LED attractant all running together*
+
 # Additional Demos
 - Web dashboard accessible at `http://192.168.4.1` after connecting to `MosquitoTrap` WiFi (password: `trap1234`)
 - Live WebSocket updates showing sensor readings in real-time
